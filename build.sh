@@ -67,6 +67,10 @@ M3G_JAR=$JAR_DIST_HOME/jsr184-m3g.jar
 
 MICROBACKEND_JAR=${JAR_DIST_HOME}/microbackend.jar
 
+PISCES_JAR=${JAR_DIST_HOME}/pisces.jar
+PISCES_JAVA_JAR=${JAR_DIST_HOME}/pisces-java.jar
+PISCES_NATIVE_JAR=${JAR_DIST_HOME}/pisces-native.jar
+
 # External library dependencies
 # (By default use the included ones.)
 KXML2_JAR=`pwd`/lib/kxml2-2.3.0.jar
@@ -90,6 +94,7 @@ FB_ENABLED=no
 BT_ENABLED=no
 NIO_NATIVE_ENABLED=no
 FILE_NATIVE_ENABLED=no
+PISCES_NATIVE_ENABLED=no
 
 #==========================================
 # You should not change anything below
@@ -575,6 +580,22 @@ build_java \
   $MIDPATH_ENABLED components/microbackend $MICROBACKEND_JAR \
   :$J2SE_JAR:$SDLJAVA_CLDC_JAR:$ESCHER_CLDC_JAR:$SWT_JAR
 
+# Build pisces library
+mkdir components/pisces/common/classes
+make -C components/pisces/common \
+  JAVAC=$JAVAC_CMD \
+  JAVAC_FLAGS="-bootclasspath $J2SE_JAR -sourcepath .:../java $CLDC_FLAGS -d classes"
+
+(cd components/pisces/common/classes && find * -name "*.class" | xargs jar cvf $PISCES_JAR )
+
+mkdir components/pisces/java/classes
+make -C components/pisces/java \
+  JAVAC=$JAVAC_CMD \
+  JAVAC_FLAGS="-bootclasspath $J2SE_JAR -sourcepath .:../common $CLDC_FLAGS -d classes"
+
+(cd components/pisces/java/classes && find * -name "*.class" | xargs jar cvf $PISCES_JAVA_JAR )
+
+
 #------------------------
 # Build MIDPath 
 #------------------------
@@ -636,13 +657,13 @@ build_java_res $SVG_API_ENABLED \
   components/jsr226-svg/core \
   components/jsr226-svg/resources \
   $SVG_CORE_JAR \
-  :$MIDPATH_JAR:$JAXP_JAR
+  :$MIDPATH_JAR:$JAXP_JAR:$PISCES_JAR:$PISCES_JAVA_JAR
 
 # Build M2G/SVG (JSR226) MIDP2 implementation
 build_java $SVG_API_ENABLED \
   components/jsr226-svg/midp2 \
   $SVG_MIDP2_JAR \
-  :$MIDPATH_JAR:$SVG_CORE_JAR 
+  :$MIDPATH_JAR:$SVG_CORE_JAR:$PISCES_JAR:$PISCES_JAVA_JAR 
 
 # Not fully tested yet.
 # Build M2G/SVG (JSR226) AWT implementation
@@ -655,7 +676,7 @@ fi
 
 # Build OpenGL ES (JSR239) core
 build_java $OPENGL_API_ENABLED components/jsr239-opengl/core $OPENGLES_CORE_JAR \
-  :$MIDPATH_JAR:$J2SE_JAR
+  :$MIDPATH_JAR:$J2SE_JAR:$MICROBACKEND_JAR
 
 # Build OpenGL ES (JSR239) pure Java implementation based on jGL
 build_java $OPENGL_API_ENABLED components/jsr239-opengl/implementations/jgl $OPENGLES_JGL_JAR \
@@ -672,7 +693,6 @@ build_java $M3G_API_ENABLED components/jsr184-m3g/core $M3G_JAR \
 #-------------------
 # Build demos
 #-------------------
-
 build_java_res $DEMOS_ENABLED demos/src demos/resources \
   $JAR_DIST_HOME/midpath-demos.jar \
   :$MIDPATH_JAR:$LOCATION_JAR:$MESSAGING_JAR:$SVG_CORE_JAR:$OPENGLES_CORE_JAR:$OPENGLES_NIO_JAR:$M3G_JAR
@@ -719,6 +739,9 @@ build_native $FILE_NATIVE_ENABLED native/file
 
 # Build native nio part
 build_native $NIO_NATIVE_ENABLED native/nio
+
+# Build native pisces part
+build_native $PISCES_NATIVE_ENABLED native/pisces
 
 # Build the ALSA native part
 build_native $ALSA_ENABLED native/alsa
