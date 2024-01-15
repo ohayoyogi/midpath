@@ -43,6 +43,14 @@ public class JavaEGLSurface extends EGLSurface {
 			id++;
 	}
 
+	public JavaEGLSurface(int width, int height) {
+		//this.largestPBuffer = largestPBuffer;
+		this.buffer = new int[width * height];
+		this.width = width;
+		this.height = height;
+		id++;
+	}
+
 	public String toString() {
 		return "EGLSurfaceImpl[" + id + "]";
 	}

@@ -5,9 +5,10 @@ import java.nio.ByteBuffer;
 
 import javax.microedition.khronos.opengles.GL10;
 import javax.microedition.lcdui.Graphics;
-import javax.microedition.lcdui.Image;
 
-import org.thenesis.midpath.ui.toolkit.virtual.VirtualGraphics;
+import org.thenesis.midpath.opengles.JavaEGLSurface;
+
+import com.sun.midp.lcdui.GameMap;
 
 public class PlatformHelperMIDPath extends PlatformHelper {
     
@@ -65,7 +66,7 @@ public class PlatformHelperMIDPath extends PlatformHelper {
 
     public void drawColorBufferToGraphics(GL10 gl, Object g) {
 
-        VirtualGraphics imageGraphics = (VirtualGraphics) g;
+        Graphics imageGraphics = (Graphics) g;
         int width = getGraphicsWidth(imageGraphics);
         int height = getGraphicsHeight(imageGraphics);
         //System.out.println("[DEBUG]NativeELG10: drawColorBufferToGraphics(): width="+ width + " height=" + height);
@@ -110,8 +111,8 @@ public class PlatformHelperMIDPath extends PlatformHelper {
             }
         }
         
-        Image img = Image.createRGBImage(imgData, width, height, false);
-        imageGraphics.drawImage(img, 0, 0, Graphics.TOP | Graphics.LEFT);
+        // Image img = Image.createRGBImage(imgData, width, height, false);
+        imageGraphics.drawRGB(imgData, 0, 0, 0, 0, width, height, false);
         
 
         // Pixel:
@@ -134,16 +135,16 @@ public class PlatformHelperMIDPath extends PlatformHelper {
     }
 
     public int getGraphicsHeight(Object g) {
-        VirtualGraphics imageGraphics = (VirtualGraphics) g;
-        int height = imageGraphics.getSurface().getHeight();
-        //int height = GameMap.getGraphicsAccess().getGraphicsHeight(imageGraphics);
+        Graphics imageGraphics = (Graphics) g;
+        // int height = imageGraphics.getSurface().getHeight();
+        int height = GameMap.getGraphicsAccess().getGraphicsHeight(imageGraphics);
         return height;
     }
 
     public int getGraphicsWidth(Object g) {
-        VirtualGraphics imageGraphics = (VirtualGraphics) g;
-        int width = imageGraphics.getSurface().getWidth();
-        //int width = GameMap.getGraphicsAccess().getGraphicsWidth(imageGraphics);
+        Graphics imageGraphics = (Graphics) g;
+        // int width = imageGraphics.getSurface().getWidth();
+        int width = GameMap.getGraphicsAccess().getGraphicsWidth(imageGraphics);
         return width;
     }
 
@@ -158,24 +159,25 @@ public class PlatformHelperMIDPath extends PlatformHelper {
     }
 
     public boolean copySurfaceToPixmap(Object src, Object dst) {
+        return copySurfaceToPixmap((JavaEGLSurface)src, (Graphics)dst);
+    }
 
-        VirtualGraphics srcGraphics = (VirtualGraphics) src;
+    public boolean copySurfaceToPixmap(JavaEGLSurface src, Graphics dst) {
         int srcWidth = getGraphicsWidth(src);
         int srcHeight = getGraphicsHeight(src);
-        int[] srcData = srcGraphics.getSurface().data;
+        int[] srcData = src.getBuffer();
 
-        VirtualGraphics dstGraphics = (VirtualGraphics) dst;
         int dstWidth = getGraphicsWidth(dst);
         int dstHeight = getGraphicsHeight(dst);
-        int[] dstData = dstGraphics.getSurface().data;
+        // int[] dstData = dst.;
 
         if ((srcWidth == dstWidth) && (srcHeight == dstHeight)) {
-            System.arraycopy(srcData, 0, dstData, 0, srcData.length);
+            // System.arraycopy(srcData, 0, dstData, 0, srcData.length);
+            System.out.println("PlatformHelperMIDPath.copySurfaceToPixmap: not implemented");
             return true;
         } else {
             return false;
         }
-
     }
 
     // private boolean isBigEndian() {

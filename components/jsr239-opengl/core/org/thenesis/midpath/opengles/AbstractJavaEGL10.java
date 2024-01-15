@@ -31,7 +31,7 @@ import javax.microedition.lcdui.Graphics;
 //import jgl.GLBackend;
 //import jgl.context.GLContext;
 
-import org.thenesis.midpath.ui.toolkit.virtual.VirtualGraphics;
+import org.thenesis.microbackend.ui.graphics.VirtualGraphics;
 
 import com.sun.jsr239.Errors;
 import com.sun.jsr239.GLConfiguration;
@@ -200,7 +200,7 @@ public abstract class AbstractJavaEGL10 implements EGL10 {
 		}
 
 		// FIXME Remove cast to VirtualGraphics (by using GraphicsAccess tunnel) ?
-		VirtualGraphics imageGraphics = (VirtualGraphics) pixmap;
+		Graphics imageGraphics = (Graphics) pixmap;
 		int width = GameMap.getGraphicsAccess().getGraphicsWidth(imageGraphics);
 		int height = GameMap.getGraphicsAccess().getGraphicsHeight(imageGraphics);
 
@@ -213,8 +213,7 @@ public abstract class AbstractJavaEGL10 implements EGL10 {
 		if (!isTerminated(attrib_list)) {
 			throwIAE(Errors.EGL_ATTRIBS_NOT_TERMINATED);
 		}
-		
-		JavaEGLSurface surface = new JavaEGLSurface(imageGraphics.getSurface().data, width, height);
+		JavaEGLSurface surface = new JavaEGLSurface(width, height);
 		
 		surface.setTarget(imageGraphics);
 		return surface;
@@ -243,7 +242,7 @@ public abstract class AbstractJavaEGL10 implements EGL10 {
 		}
 
 //		 FIXME Remove cast to VirtualGraphics (by using GraphicsAccess tunnel) ?
-		VirtualGraphics imageGraphics = (VirtualGraphics) win;
+		Graphics imageGraphics = (Graphics) win;
 		int width = GameMap.getGraphicsAccess().getGraphicsWidth(imageGraphics);
 		int height = GameMap.getGraphicsAccess().getGraphicsHeight(imageGraphics);
 
@@ -256,8 +255,8 @@ public abstract class AbstractJavaEGL10 implements EGL10 {
 		if (!isTerminated(attrib_list)) {
 			throwIAE(Errors.EGL_ATTRIBS_NOT_TERMINATED);
 		}
-		
-		JavaEGLSurface surface = new JavaEGLSurface(imageGraphics.getSurface().data, width, height);
+
+		JavaEGLSurface surface = new JavaEGLSurface(width, height);
 
 		surface.setTarget(imageGraphics);
 		return surface;
