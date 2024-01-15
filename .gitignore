@@ -1,0 +1,5 @@
+*.class
+*.o
+*.so
+dist/*.jar
+dist/*.so
