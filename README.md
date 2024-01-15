@@ -1,3 +1,7 @@
+This repository is originated from [j2me-preservation/midpath](https://github.com/j2me-preservation/midpath).
+
+This project currently based on `v0.3-rc2` tag in original midpath project. New default branch is named `main` and will be maintained mainly.
+
 MIDPath README
 ===============
 
