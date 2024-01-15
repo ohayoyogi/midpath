@@ -67,7 +67,7 @@ public class PlayerMIDlet extends MIDlet {
 			Player player = Manager.createPlayer(is, "audio/ogg");
 			player.addPlayerListener(new PlayerListener() {
 				public void playerUpdate(Player player,  String event, Object eventData) {
-					System.out.println("MP3 player event: " + event); 
+					System.out.println("Player event: " + event); 
 				}
 			});
 			player.start();

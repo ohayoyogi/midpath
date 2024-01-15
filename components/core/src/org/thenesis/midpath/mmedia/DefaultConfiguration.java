@@ -284,6 +284,7 @@ public class DefaultConfiguration extends Configuration {
         	handlers.put(MIME_AUDIO_OGG, "org.thenesis.midpath.mmedia.SDLMusicPlayer");
         	handlers.put(MIME_AUDIO_XM, "org.thenesis.midpath.mmedia.SDLMusicPlayer");
         	handlers.put(MIME_AUDIO_MOD, "org.thenesis.midpath.mmedia.SDLMusicPlayer");
+            handlers.put(MIME_AUDIO_MIDI, "org.thenesis.midpath.mmedia.SDLMusicPlayer");
         } else if (soundEngineName.equalsIgnoreCase("virtual")) {
         	handlers.put(MIME_AUDIO_WAV, "org.thenesis.midpath.mmedia.VirtualSoundPlayer");
         	handlers.put(MIME_AUDIO_MP3, "org.thenesis.midpath.mmedia.VirtualSoundPlayer");
