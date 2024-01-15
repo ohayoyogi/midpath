@@ -532,6 +532,8 @@ build_java_res()
 {
   build_java $1 $2 $4 $5 || exit 1
 
+  local list_resources=$(pwd)/resources.list
+
   if [ $1 = yes ]; then
     local resdir=$3
     local jarname=$4
@@ -541,10 +543,13 @@ build_java_res()
       ( cd $resdir && find -type f | grep -v "/.svn" | $JAR_CMD uvf $jarname -E -M -@ )
     else
       # Sun's jar has trouble with the first entry when using @ and -C
-      echo "ignore_the_error" > resources.list
+      # echo "ignore_the_error" > $list_resources
+      true > $list_resources
       # all other jar commands handle the resources via a file
-      find $resdir -type f | grep -v "/.svn" >> resources.list
-      $JAR_CMD uvf $jarname -C $resdir @resources.list
+      pushd $resdir
+      find . -type f | grep -v "/.svn" >> $list_resources
+      $JAR_CMD uvf $jarname -C $resdir @$list_resources
+      popd
     fi
   fi
 }
