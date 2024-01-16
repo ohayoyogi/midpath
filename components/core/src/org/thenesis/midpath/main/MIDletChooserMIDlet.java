@@ -28,14 +28,12 @@ import javax.microedition.midlet.MIDlet;
 
 import com.sun.midp.midletsuite.MIDletInfo;
 
-import org.thenesis.midpath.main.JarInspectorME;
-
 public class MIDletChooserMIDlet extends MIDlet implements CommandListener {
 
 	private static final Command CMD_EXIT = new Command("Exit", Command.EXIT, 1);
 	private static final Command CMD_START_MIDLET = new Command("Start", Command.ITEM, 1);
 
-	static JarInspectorME jarInspector = MIDletLauncher.jarInspector;
+	static AbstractJarInspector jarInspector = MIDletLauncher.jarInspector;
 	static MIDletInfo launchMidletInfo;
 
 	private Display display;
