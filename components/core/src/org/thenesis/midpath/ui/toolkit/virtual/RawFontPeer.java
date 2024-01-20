@@ -122,7 +122,7 @@ public class RawFontPeer implements FontPeer {
 		VirtualSurface surface = vg.getSurface();
 
 		if (Logging.TRACE_ENABLED)
-			System.out.println("SDLGraphics.drawString(): " + str + " x=" + x + " y=" + y + " color="
+			System.out.println("RawFontPeer.render(): " + str + " x=" + x + " y=" + y + " color="
 					+ Integer.toHexString(g.getColor()));
 
 		int fw = FONTS_WIDTH[font];
