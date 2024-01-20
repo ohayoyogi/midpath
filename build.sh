@@ -548,7 +548,7 @@ build_java_res()
       # all other jar commands handle the resources via a file
       pushd $resdir
       find . -type f | grep -v "/.svn" >> $list_resources
-      $JAR_CMD uvf $jarname -C $resdir @$list_resources
+      $JAR_CMD uvf $jarname @$list_resources
       popd
     fi
   fi
