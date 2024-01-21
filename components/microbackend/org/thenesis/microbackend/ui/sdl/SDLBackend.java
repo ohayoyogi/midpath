@@ -18,6 +18,8 @@
 package org.thenesis.microbackend.ui.sdl;
 
 import java.io.IOException;
+import java.util.StringTokenizer;
+import java.util.Vector;
 
 import org.thenesis.microbackend.ui.BackendEventListener;
 import org.thenesis.microbackend.ui.Configuration;
@@ -29,11 +31,15 @@ import org.thenesis.microbackend.ui.UIBackend;
 import sdljava.SDLException;
 import sdljava.SDLMain;
 import sdljava.event.SDLEvent;
+import sdljava.event.SDLJoyButtonEvent;
+import sdljava.event.SDLJoyHatEvent;
 import sdljava.event.SDLKey;
 import sdljava.event.SDLKeyboardEvent;
 import sdljava.event.SDLMouseButtonEvent;
 import sdljava.event.SDLMouseMotionEvent;
 import sdljava.event.SDLQuitEvent;
+import sdljava.joystick.HatState;
+import sdljava.joystick.SDLJoystick;
 import sdljava.video.SDLSurface;
 import sdljava.video.SDLVideo;
 import sdljava.x.swig.SDLPressedState;
@@ -54,6 +60,12 @@ public class SDLBackend implements UIBackend {
     private int canvasHeight;
     private int bitsPerPixel;
     private String videoMode;
+
+    private boolean joystickEnabled;
+    private int[] joystickButtonMapping;
+    private String joystickButtonMappingStr;
+    private int joystickHatPrevPos;
+    private SDLJoystick joystick;
 
     private BackendEventListener listener = new NullBackendEventListener();
 
@@ -76,7 +88,8 @@ public class SDLBackend implements UIBackend {
 
         bitsPerPixel = conf.getIntParameter("org.thenesis.microbackend.ui.sdl.bitsPerPixel", 32);
         videoMode = conf.getParameterDefault("org.thenesis.microbackend.ui.sdl.videoMode", "SW");
-
+        joystickEnabled = conf.getParameterDefault("org.thenesis.microbackend.ui.sdl.enableJoystick", "false").equals("true");
+        joystickButtonMappingStr = conf.getParameter("org.thenesis.microbackend.ui.sdl.joystickButtonMapping");
     }
 
     public void setBackendEventListener(BackendEventListener listener) {
@@ -110,7 +123,32 @@ public class SDLBackend implements UIBackend {
 
     public void close() {
         eventThread.stop();
-        SDLMain.quitSubSystem(SDLMain.SDL_INIT_VIDEO);
+
+        int quitFlags = SDLMain.SDL_INIT_VIDEO;
+        if (joystickEnabled) {
+            quitFlags |= SDLMain.SDL_INIT_JOYSTICK;
+            if (joystick != null) {
+                joystick.joystickClose();
+                joystick = null;
+            }
+        }
+        SDLMain.quitSubSystem(quitFlags);
+    }
+
+    private String[] splitString(String src, String delimiter) {
+        if (src == null || src.equals("")) {
+            return new String[0];
+        }
+        Vector tokens = new Vector();
+        StringTokenizer splitted = new StringTokenizer(src, delimiter);
+        while (splitted.hasMoreElements()) {
+            tokens.addElement(splitted.nextToken());
+        }
+        String[] result = new String[tokens.size()];
+        for (int i = 0; i < tokens.size(); i++) {
+            result[i] = (String)tokens.elementAt(i);
+        }
+        return result;
     }
 
     public void open() throws IOException {
@@ -118,10 +156,37 @@ public class SDLBackend implements UIBackend {
         long flags = videoMode.equalsIgnoreCase("HW") ? SDLVideo.SDL_HWSURFACE : SDLVideo.SDL_SWSURFACE;
 
         try {
-            SDLMain.init(SDLMain.SDL_INIT_VIDEO);
+            long initFlags = SDLMain.SDL_INIT_VIDEO;
+            if (joystickEnabled) {
+                initFlags |= SDLMain.SDL_INIT_JOYSTICK;
+            }
+            SDLMain.init(initFlags);
             screenSurface = SDLVideo.setVideoMode(canvasWidth, canvasHeight, bitsPerPixel, flags);
             rootARGBSurface = SDLVideo.createRGBSurface(SDLVideo.SDL_SWSURFACE, canvasWidth, canvasHeight, 32, 0x00ff0000L, 0x0000ff00L,
                 0x000000ffL, 0xff000000L);
+
+            int numJoysticks = SDLJoystick.numJoysticks();
+            if (joystickEnabled) {
+                if (numJoysticks <= 0) {
+                    System.out.println("[WARN] There are no joysticks found.");
+                }
+                joystick = SDLJoystick.joystickOpen(0);
+                int numButtons = joystick.joystickNumButtons();
+
+                String[] buttonMappingArray = splitString(joystickButtonMappingStr, ",");
+                joystickButtonMapping = new int[numButtons];
+                for (int i = 0; i < numButtons; i++) {
+                    joystickButtonMapping[i] = 48 + i;
+                    if (i < buttonMappingArray.length) {
+                        try {
+                            joystickButtonMapping[i] = Integer.parseInt(buttonMappingArray[i]);
+                        } catch (NumberFormatException e) {
+                            System.out.println("[WARN] Parsing string failed. Using " + (48 + i) + " instead of " + buttonMappingArray[i]);
+                        }
+                    }
+                }
+            }
+
             if (Logging.TRACE_ENABLED)
                 System.out.println("[DEBUG] Toolkit.initialize(): VideoSurface: " + rootARGBSurface);
             eventThread = new SDLEventThread();
@@ -181,6 +246,10 @@ public class SDLBackend implements UIBackend {
             //	processEvent((SDLExposeEvent) event);
             else if (event instanceof SDLKeyboardEvent)
                 processEvent((SDLKeyboardEvent) event);
+            else if (event instanceof SDLJoyButtonEvent)
+                processEvent((SDLJoyButtonEvent) event);
+            else if (event instanceof SDLJoyHatEvent)
+                processEvent((SDLJoyHatEvent) event);
         }
 
         public void processEvent(SDLMouseButtonEvent event) {
@@ -216,6 +285,54 @@ public class SDLBackend implements UIBackend {
                 listener.keyReleased(convertKeyCode(keyCode), (char) unicode, 0);
             }
 
+        }
+
+        public void processEvent(SDLJoyButtonEvent event) {
+            int button = event.getButton();
+            int which = event.getWhich();
+            if (event.getState() == SDLPressedState.PRESSED) {
+                if (Logging.TRACE_ENABLED)
+                    System.out.println("[DEBUG] SDLEventThread.processEvent(): button: " + button + " which: " + which);
+                listener.keyPressed(joystickButtonMapping[button], (char)0, 0);
+            } else if (event.getState() == SDLPressedState.RELEASED) {
+                listener.keyReleased(joystickButtonMapping[button], (char)0, 0);
+            }
+        }
+
+        public void processEvent(SDLJoyHatEvent event) {
+            int hatState = event.getSwigEvent().getValue();
+            if (Logging.TRACE_ENABLED)
+                System.out.println("[DEBUG] SDLEventThread.processEvent(): hatState: " + hatState);
+            int diff = hatState ^ joystickHatPrevPos;
+            if ((diff & HatState.SDL_HAT_UP) != 0) {
+                if ((joystickHatPrevPos & HatState.SDL_HAT_UP) == 0) {
+                    listener.keyPressed(KeyConstants.VK_UP, (char) 0, 0);
+                } else {
+                    listener.keyReleased(KeyConstants.VK_UP, (char) 0, 0);
+                }
+            }
+            if ((diff & HatState.SDL_HAT_DOWN) != 0) {
+                if ((joystickHatPrevPos & HatState.SDL_HAT_DOWN) == 0) {
+                    listener.keyPressed(KeyConstants.VK_DOWN, (char) 0, 0);
+                } else {
+                    listener.keyReleased(KeyConstants.VK_DOWN, (char) 0, 0);
+                }
+            }
+            if ((diff & HatState.SDL_HAT_RIGHT) != 0) {
+                if ((joystickHatPrevPos & HatState.SDL_HAT_RIGHT) == 0) {
+                    listener.keyPressed(KeyConstants.VK_RIGHT, (char) 0, 0);
+                } else {
+                    listener.keyReleased(KeyConstants.VK_RIGHT, (char) 0, 0);
+                }
+            }
+            if ((diff & HatState.SDL_HAT_LEFT) != 0) {
+                if ((joystickHatPrevPos & HatState.SDL_HAT_LEFT) == 0) {
+                    listener.keyPressed(KeyConstants.VK_LEFT, (char) 0, 0);
+                } else {
+                    listener.keyReleased(KeyConstants.VK_LEFT, (char) 0, 0);
+                }
+            }
+            joystickHatPrevPos = hatState;
         }
 
         public void processEvent(SDLQuitEvent event) {
