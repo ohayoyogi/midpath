@@ -43,6 +43,7 @@ import sdljava.joystick.SDLJoystick;
 import sdljava.video.SDLSurface;
 import sdljava.video.SDLVideo;
 import sdljava.x.swig.SDLPressedState;
+import sdljavax.gfx.SDLGfx;
 
 public class SDLBackend implements UIBackend {
 
@@ -58,6 +59,9 @@ public class SDLBackend implements UIBackend {
 
     private int canvasWidth;
     private int canvasHeight;
+    private int windowScale;
+    private int windowWidth;
+    private int windowHeight;
     private int bitsPerPixel;
     private String videoMode;
 
@@ -83,6 +87,9 @@ public class SDLBackend implements UIBackend {
     /* UIBackend interface */
 
     public void configure(Configuration conf, int width, int height) {
+        windowScale = conf.getIntParameter("org.thenesis.microbackend.ui.sdl.windowScale", 1);
+        windowWidth = width * windowScale;
+        windowHeight = height * windowScale;
         canvasWidth = width;
         canvasHeight = height;
 
@@ -105,8 +112,10 @@ public class SDLBackend implements UIBackend {
             System.out.println("[DEBUG] Toolkit.refresh(): x=" + x + " y=" + y + " widht=" + widht + " heigth=" + heigth);
 
         try {
-            rootARGBSurface.blitSurface(screenSurface);
-            screenSurface.updateRect(x, y, widht, heigth);
+            SDLSurface zoomedSurface = SDLGfx.zoomSurface(rootARGBSurface, 2.0, 2.0, false);
+            // rootARGBSurface.blitSurface(screenSurface);
+            zoomedSurface.blitSurface(screenSurface);
+            screenSurface.updateRect(x * windowScale, y * windowScale, widht * windowScale, heigth * windowScale);
         } catch (SDLException e) {
             e.printStackTrace();
         }
@@ -161,7 +170,7 @@ public class SDLBackend implements UIBackend {
                 initFlags |= SDLMain.SDL_INIT_JOYSTICK;
             }
             SDLMain.init(initFlags);
-            screenSurface = SDLVideo.setVideoMode(canvasWidth, canvasHeight, bitsPerPixel, flags);
+            screenSurface = SDLVideo.setVideoMode(windowWidth, windowHeight, bitsPerPixel, flags);
             rootARGBSurface = SDLVideo.createRGBSurface(SDLVideo.SDL_SWSURFACE, canvasWidth, canvasHeight, 32, 0x00ff0000L, 0x0000ff00L,
                 0x000000ffL, 0xff000000L);
 
