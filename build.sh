@@ -42,6 +42,7 @@ M3G_API_ENABLED=yes
 DEMOS_ENABLED=yes
 
 KXML2_DIST_ENABLED=yes
+LIBRETRO_DIST_ENABLED=yes
 
 # Overridable file names and default locations
 SDLJAVA_CLDC_JAR=${JAR_DIST_HOME}/sdljava-cldc.jar
@@ -71,6 +72,7 @@ MICROBACKEND_JAR=${JAR_DIST_HOME}/microbackend.jar
 # (By default use the included ones.)
 KXML2_JAR=`pwd`/lib/kxml2-2.3.0.jar
 SWT_JAR=`pwd`/lib/swt.jar
+LIBRETRO_JAR=`pwd`/lib/libretro-java.jar
 
 MIDPATH_JAR=$JAR_DIST_HOME/midpath.jar
 
@@ -578,7 +580,7 @@ build_java $JGL_CLDC_ENABLED external/jgl-cldc/src $JGL_CLDC_JAR
 # Build MicroBackend library (requires sdljava-cldc, escher-cldc and swt library)
 build_java \
   $MIDPATH_ENABLED components/microbackend $MICROBACKEND_JAR \
-  :$J2SE_JAR:$SDLJAVA_CLDC_JAR:$ESCHER_CLDC_JAR:$SWT_JAR
+  :$J2SE_JAR:$SDLJAVA_CLDC_JAR:$ESCHER_CLDC_JAR:$SWT_JAR:$LIBRETRO_JAR
 
 #------------------------
 # Build MIDPath 
@@ -607,6 +609,10 @@ fi
 if [ $KXML2_DIST_ENABLED = yes ]; then
   # Add other required libraries to the dist directory
   cp $KXML2_JAR dist
+fi
+
+if [ $LIBRETRO_DIST_ENABLED = yes ]; then
+  cp $LIBRETRO_JAR dist
 fi
 
 # Optional components
