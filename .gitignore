@@ -3,3 +3,8 @@
 *.so
 dist/*.jar
 dist/*.so
+
+bin/*.db
+bin/*.kjx
+bin/*.jar
+bin/*.log
