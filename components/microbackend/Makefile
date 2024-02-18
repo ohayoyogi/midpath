@@ -115,6 +115,7 @@ PACKAGES = \
 	org.thenesis.microbackend.zip \
 	org.thenesis.microbackend.ui.image.png \
 	org.thenesis.microbackend.ui.sdl \
+	org.thenesis.microbackend.ui.libretro \
 	org.thenesis.microbackend.ui.graphics
 
 
@@ -429,4 +430,4 @@ org.thenesis.microbackend.zip : $(call PACKAGE_OBJS,org.thenesis.microbackend.zi
 org.thenesis.microbackend.ui.image.png : $(call PACKAGE_OBJS,org.thenesis.microbackend.ui.image.png)
 org.thenesis.microbackend.ui.sdl : $(call PACKAGE_OBJS,org.thenesis.microbackend.ui.sdl)
 org.thenesis.microbackend.ui.graphics : $(call PACKAGE_OBJS,org.thenesis.microbackend.ui.graphics)
-
+org.thenesis.microbackend.ui.libretro : $(call PACKAGE_OBJS,org.thenesis.microbackend.ui.libretro)
