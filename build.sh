@@ -29,6 +29,7 @@ JLAYERME_CLDC_ENABLED=yes
 JORBIS_CLDC_ENABLED=yes
 AVETANABT_CLDC_ENABLED=yes
 JGL_CLDC_ENABLED=yes
+KDDI_ENABLED=yes
 
 # Optional components
 WEB_SERVICES_API_ENABLED=yes
@@ -61,6 +62,7 @@ SVG_MIDP2_JAR=$JAR_DIST_HOME/jsr226-svg-midp2.jar
 SVG_AWT_JAR=$JAR_DIST_HOME/jsr226-svg-awt.jar
 
 JGL_CLDC_JAR=$JAR_DIST_HOME/jgl-cldc.jar
+KDDI_JAR=$JAR_DIST_HOME/kddi.jar
 OPENGLES_CORE_JAR=$JAR_DIST_HOME/jsr239-opengles-core.jar
 OPENGLES_JGL_JAR=$JAR_DIST_HOME/jsr239-opengles-jgl.jar
 OPENGLES_NIO_JAR=$JAR_DIST_HOME/jsr239-opengles-nio.jar
@@ -679,6 +681,10 @@ build_java $OPENGL_API_ENABLED components/jsr239-opengl/nio-cldc $OPENGLES_NIO_J
 # Build M3G (JSR184)
 build_java $M3G_API_ENABLED components/jsr184-m3g/core $M3G_JAR \
   :$MIDPATH_JAR:$OPENGLES_CORE_JAR:$OPENGLES_NIO_JAR
+
+# Build KDDI / J-BLEND (the au EZappli APIs)
+build_java $KDDI_ENABLED components/kddi/src/java $KDDI_JAR \
+  :$MIDPATH_JAR:$LIBRETRO_JAR
 
 #-------------------
 # Build demos
