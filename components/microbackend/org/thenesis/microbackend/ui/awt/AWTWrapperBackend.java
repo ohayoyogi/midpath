@@ -22,8 +22,9 @@ import java.awt.Panel;
 import java.io.IOException;
 
 import org.thenesis.microbackend.ui.Configuration;
+import org.thenesis.microbackend.ui.WrapperBackend;
 
-public class AWTWrapperBackend extends AbstractAWTBackend {
+public class AWTWrapperBackend extends AbstractAWTBackend implements WrapperBackend {
 
 	private Container container;
 
@@ -31,6 +32,12 @@ public class AWTWrapperBackend extends AbstractAWTBackend {
 	}
 
     public AWTWrapperBackend(Object c) {
+        setTarget(c);
+    }
+
+    /* WrapperBackend interface: UIBackendFactory builds this class reflectively, which
+     * can only use the no-argument constructor, so the container arrives separately. */
+    public void setTarget(Object c) {
 	    container = (Container)c;
         canvasWidth = container.getWidth();
         canvasHeight = container.getHeight();     

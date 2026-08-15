@@ -35,6 +35,43 @@ import com.sun.midp.log.Logging;
 
 public class VirtualImage extends Image {
 
+	/*
+	 * Cached result of "has this image any non-opaque pixel?".
+	 * 0 = not yet scanned, 1 = fully opaque, 2 = has transparency. See render().
+	 *
+	 * Cached for IMMUTABLE images only. An earlier version cached for every image and
+	 * cleared the cache in getGraphics(), which is wrong: a MIDlet typically takes a
+	 * Graphics once and then draws through it every frame, so the pixels go on changing
+	 * long after the one invalidation. The image would keep being treated as opaque --
+	 * blitting whole rows and painting over what should have shown through.
+	 *
+	 * An immutable image cannot change after construction, so there the cache is sound,
+	 * and that is where it earns its keep: sprites loaded from a PNG are immutable, and
+	 * they are what a game blits hundreds of times a frame.
+	 */
+	private int opaqueState = 0;
+
+	private boolean isOpaque() {
+		if (isMutable) {
+			return scanOpaque();
+		}
+		if (opaqueState == 0) {
+			opaqueState = scanOpaque() ? 1 : 2;
+		}
+		return opaqueState == 1;
+	}
+
+	private boolean scanOpaque() {
+		int[] d = surface.data;
+		int n = d.length;
+		for (int i = 0; i < n; i++) {
+			if ((d[i] & 0xFF000000) != 0xFF000000) {
+				return false;
+			}
+		}
+		return true;
+	}
+
 	static {
 		PngImage.setProgressiveDisplay(false);
 	}
@@ -277,6 +314,23 @@ public class VirtualImage extends Image {
 		symax = dymax - y + y_src;
 
 		int w = sxmax - sxmin + 1, h = symax - symin + 1;
+
+		/*
+		 * Copy whole rows when the image has no transparent pixel.
+		 *
+		 * The per-pixel form below tests alpha on every pixel, which on an interpreter
+		 * costs more than the copy itself. System.arraycopy is native, so an opaque image
+		 * can be moved a row at a time instead. Whether the image is opaque is cached for
+		 * immutable images only; see opaqueState.
+		 */
+		if (isOpaque()) {
+			for (int ry = 0; ry < h; ry++) {
+				System.arraycopy(surface.data, (symin + ry) * surface.width + sxmin,
+						destSurface.data, (dymin + ry) * destSurface.width + dxmin, w);
+			}
+			return true;
+		}
+
 		for (int ry = 0; ry < h; ry++) {
 
 			int srcPosition = (symin + ry) * surface.width + sxmin;
@@ -284,8 +338,6 @@ public class VirtualImage extends Image {
 			int length = w;
 
 			for (int i = 0, sp = srcPosition, dp = dstPosition; i < length; i++, sp += 1, dp += 1) {
-				// TODO support transparent pixels
-				//System.out.println("[DEBUG]VirtualImage.render(): " + (i + dstPosition));
 				if (((surface.data[i + srcPosition]) & 0xFF000000) == 0xFF000000)
 					destSurface.data[i + dstPosition] = surface.data[i + srcPosition];
 			}
