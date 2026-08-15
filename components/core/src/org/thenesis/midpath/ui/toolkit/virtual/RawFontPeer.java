@@ -50,12 +50,54 @@ public class RawFontPeer implements FontPeer {
 		}
 	}
 
+	/*
+	 * Characters this font does not have are asked of the platform.
+	 *
+	 * The built-in table below is 256 characters, indexed by character code, so anything
+	 * above it, Japanese text for one, draws as nothing. The device may have those
+	 * glyphs in a font of its own.
+	 *
+	 * Reached by reflection so that this class, which is the generic software renderer,
+	 * carries no reference to any particular backend. Absent or unusable, everything
+	 * behaves exactly as before.
+	 */
+	private static final String PROVIDER_CLASS =
+		"org.thenesis.microbackend.ui.libretro.LibRetroGlyphs";
+	private static Object provider;
+	private static boolean providerTried;
+
+	private static Object getProvider() {
+		if (!providerTried) {
+			providerTried = true;
+			try {
+				provider = Class.forName(PROVIDER_CLASS).newInstance();
+			} catch (Throwable t) {
+				provider = null;
+			}
+		}
+		return provider;
+	}
+
+	/** Width the platform would give this character, or 0 if it has none. */
+	private int platformWidth(char ch) {
+		Object p = getProvider();
+		if (p == null) {
+			return 0;
+		}
+		return ((org.thenesis.microbackend.ui.GlyphSource) p).advance(ch, FONTS_HEIGHT[font]);
+	}
+
 	public int charWidth(char ch) {
-		return FONTS_WIDTH[font];
+		int w = platformWidth(ch);
+		return w > 0 ? w : FONTS_WIDTH[font];
 	}
 
 	public int charsWidth(char[] ch, int offset, int length) {
-		return length * FONTS_WIDTH[font];
+		int total = 0;
+		for (int i = 0; i < length; i++) {
+			total += charWidth(ch[offset + i]);
+		}
+		return total;
 	}
 
 	public int getBaselinePosition() {
@@ -95,11 +137,15 @@ public class RawFontPeer implements FontPeer {
 	}
 
 	public int stringWidth(String str) {
-		return str.length() * FONTS_WIDTH[font];
+		return substringWidth(str, 0, str.length());
 	}
 
 	public int substringWidth(String str, int offset, int len) {
-		return len * FONTS_WIDTH[font];
+		int total = 0;
+		for (int i = 0; i < len; i++) {
+			total += charWidth(str.charAt(offset + i));
+		}
+		return total;
 	}
 
 	public void render(Graphics g, String str, int x, int y, int anchor) {
@@ -136,19 +182,29 @@ public class RawFontPeer implements FontPeer {
 		//System.out.println("clip rectangle : " + r + " fw=" + fw + " fh=" + fh);
 
 		char[] chars = str.toCharArray();
+		int penOffset = 0;
 
 		for (int i = 0; i < chars.length; i++) {
 
-			int currentX = x + i * fw;
+			int currentX = x + penOffset;
 
 			// Set the destination offset to the next character
 			int pk = y * surface.getWidth() + currentX;
 			int dk = chars[i] * fh;
 			
-			// Check if character exists
+			// Not in this font: ask the platform, which may have it.
 			if (dk >= data.length) {
+				Object p = getProvider();
+				int adv = 0;
+				if (p != null) {
+					adv = ((org.thenesis.microbackend.ui.GlyphSource) p).draw(surface.data, pw, currentX,
+							y + fh - 1, chars[i], fh, color,
+							r.xmin, r.ymin, r.xmax, r.ymax);
+				}
+				penOffset += adv > 0 ? adv : fw;
 				continue;
 			}
+			penOffset += fw;
 
 			// Trivial clipping
 			if (currentX > r.xmax || y > r.ymax)
