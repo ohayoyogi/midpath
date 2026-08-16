@@ -70,14 +70,18 @@ public class LibRetroBackend implements UIBackend, LibRetroEventListener {
 
     // @Override
     public void onKeyPressed(int keycode) {
-        char c = (char)0;
+        /* CHAR_UNDEFINED, not zero: GenericEventMapper returns the character when there
+         * is one and the key code otherwise, so (char)0 turned every key it has no rule
+         * for into 0. These events come from buttons, not a keyboard. */
+        char c = KeyConstants.CHAR_UNDEFINED;
         int modifiers = 0;
         listener.keyPressed(convertKeyCode(keycode), c, modifiers);
     }
 
     // @Override
     public void onKeyReleased(int keycode) {
-        char c = (char)0;
+        /* CHAR_UNDEFINED, as in onKeyPressed(). */
+        char c = KeyConstants.CHAR_UNDEFINED;
         int modifiers = 0;
         listener.keyReleased(convertKeyCode(keycode), c, modifiers);
     }
@@ -87,35 +91,15 @@ public class LibRetroBackend implements UIBackend, LibRetroEventListener {
         listener.windowClosed();
     }
 
+    /**
+     * The libretro core already sends KeyConstants.VK_* codes, so nothing is translated here.
+     *
+     * Which physical button produces which key is decided by the core, which owns the
+     * hardware and also drives any on-screen keypad; a touched key and a pressed button
+     * arrive here as the same kind of value. Turning a VK code into a MIDP key code, a game
+     * action or a soft button stays with GenericEventMapper and configuration.cfg.
+     */
     public static int convertKeyCode(int keyCode) {
-        // FixME
-        switch (keyCode) {
-            case LibRetroConstants.RETRO_DEVICE_ID_JOYPAD_A:
-                return KeyConstants.VK_1;
-            case LibRetroConstants.RETRO_DEVICE_ID_JOYPAD_B:
-                return KeyConstants.VK_3;
-            case LibRetroConstants.RETRO_DEVICE_ID_JOYPAD_X:
-                return KeyConstants.VK_9;
-            case LibRetroConstants.RETRO_DEVICE_ID_JOYPAD_Y:
-                return KeyConstants.VK_6;
-            case LibRetroConstants.RETRO_DEVICE_ID_JOYPAD_UP:
-                return KeyConstants.VK_UP;
-            case LibRetroConstants.RETRO_DEVICE_ID_JOYPAD_DOWN:
-                return KeyConstants.VK_DOWN;
-            case LibRetroConstants.RETRO_DEVICE_ID_JOYPAD_LEFT:
-                return KeyConstants.VK_LEFT;
-            case LibRetroConstants.RETRO_DEVICE_ID_JOYPAD_RIGHT:
-                return KeyConstants.VK_RIGHT;
-            case LibRetroConstants.RETRO_DEVICE_ID_JOYPAD_R:
-                return KeyConstants.VK_F2;
-            case LibRetroConstants.RETRO_DEVICE_ID_JOYPAD_L:
-                return KeyConstants.VK_F1;
-            case LibRetroConstants.RETRO_DEVICE_ID_JOYPAD_START:
-                return KeyConstants.VK_F2;
-            case LibRetroConstants.RETRO_DEVICE_ID_JOYPAD_SELECT:
-                return KeyConstants.VK_F1;
-            default:
-                return KeyConstants.VK_UNDEFINED;
-        }
+        return keyCode;
     }
 }

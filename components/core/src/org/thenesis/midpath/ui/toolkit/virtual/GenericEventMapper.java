@@ -74,8 +74,9 @@ public class GenericEventMapper implements EventMapper {
 		KEY_POWER = Configuration.getIntProperty("org.thenesis.midpath.ui.keys.POWER", KeyConstants.VK_F12);
 		KEY_SOFT_BUTTON1 = Configuration.getIntProperty("org.thenesis.midpath.ui.keys.SOFT_BUTTON1", KeyConstants.VK_F1);
 		KEY_SOFT_BUTTON2 = Configuration.getIntProperty("org.thenesis.midpath.ui.keys.SOFT_BUTTON2", KeyConstants.VK_F2);
-		KEY_SOFT_BUTTON3 = Configuration.getIntProperty("org.thenesis.midpath.ui.keys.SOFT_BUTTON2", KeyConstants.VK_F8);
-		KEY_SOFT_BUTTON4 = Configuration.getIntProperty("org.thenesis.midpath.ui.keys.SOFT_BUTTON2", KeyConstants.VK_F9);
+		/* Each soft key reads its own property; au handsets have four. */
+		KEY_SOFT_BUTTON3 = Configuration.getIntProperty("org.thenesis.midpath.ui.keys.SOFT_BUTTON3", KeyConstants.VK_F8);
+		KEY_SOFT_BUTTON4 = Configuration.getIntProperty("org.thenesis.midpath.ui.keys.SOFT_BUTTON4", KeyConstants.VK_F9);
 		KEY_1 = Configuration.getIntProperty("org.thenesis.midpath.ui.keys.KEY_1", KeyConstants.VK_1);
 		KEY_2 = Configuration.getIntProperty("org.thenesis.midpath.ui.keys.KEY_2", KeyConstants.VK_2);
 		KEY_3 = Configuration.getIntProperty("org.thenesis.midpath.ui.keys.KEY_3", KeyConstants.VK_3);
