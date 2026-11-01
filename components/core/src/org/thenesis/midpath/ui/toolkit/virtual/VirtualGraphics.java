@@ -1193,6 +1193,60 @@ public class VirtualGraphics extends Graphics {
 
 	}
 
+	/**
+	 * Fills a triangle with the current color, including its edges (scanline fill).
+	 */
+	public void fillTriangle(int x1, int y1, int x2, int y2, int x3, int y3) {
+		if (surface == null)
+			return;
+		x1 += transX;
+		y1 += transY;
+		x2 += transX;
+		y2 += transY;
+		x3 += transX;
+		y3 += transY;
+		Rectangle r = clipRectangle;
+		int top = Math.max(Math.min(y1, Math.min(y2, y3)), r.ymin);
+		int bottom = Math.min(Math.max(y1, Math.max(y2, y3)), r.ymax - 1);
+		int[] span = new int[2];
+		for (int y = top; y <= bottom; y++) {
+			span[0] = Integer.MAX_VALUE;
+			span[1] = Integer.MIN_VALUE;
+			edgeSpan(x1, y1, x2, y2, y, span);
+			edgeSpan(x2, y2, x3, y3, y, span);
+			edgeSpan(x3, y3, x1, y1, y, span);
+			int xa = Math.max(span[0], r.xmin);
+			int xb = Math.min(span[1], r.xmax - 1);
+			if (xa <= xb)
+				drawSpan(surface.data, y * surface.width + xa, xb - xa + 1);
+		}
+	}
+
+	/** Widens span[0..1] to include where the edge (ax, ay)-(bx, by) crosses scanline y. */
+	private static void edgeSpan(int ax, int ay, int bx, int by, int y, int[] span) {
+		if (y < Math.min(ay, by) || y > Math.max(ay, by))
+			return;
+		int xa, xb;
+		if (ay == by) {
+			xa = Math.min(ax, bx);
+			xb = Math.max(ax, bx);
+		} else {
+			// Pixels the edge covers on this row, so steep and shallow edges stay solid.
+			int dy = by - ay;
+			int x0 = ax + (bx - ax) * (2 * (y - ay) - 1) / (2 * dy);
+			int x1 = ax + (bx - ax) * (2 * (y - ay) + 1) / (2 * dy);
+			int xc = ax + (bx - ax) * (y - ay) / dy;
+			int lo = Math.min(Math.min(ax, bx), Math.max(ax, bx));
+			int hi = Math.max(ax, bx);
+			xa = Math.max(Math.min(xc, Math.min(x0, x1)), lo);
+			xb = Math.min(Math.max(xc, Math.max(x0, x1)), hi);
+		}
+		if (xa < span[0])
+			span[0] = xa;
+		if (xb > span[1])
+			span[1] = xb;
+	}
+
 	//
 	//	public void fillTriangle(int x1, int y1, int x2, int y2, int x3, int y3) {
 	//

@@ -38,6 +38,7 @@ public abstract class AbstractAWTBackend implements UIBackend {
 
     Panel panel;
     protected BufferedImage screenImage;
+    protected final Object screenLock = new Object();
 
     int canvasWidth;
     int canvasHeight;
@@ -63,8 +64,12 @@ public abstract class AbstractAWTBackend implements UIBackend {
             }
 
             public void paint(Graphics g) {
-                if (screenImage != null) {
-                    g.drawImage(screenImage, 0, 0, null);
+                // Do not draw while updateARGBPixels() is rewriting the image: on
+                // runtimes such as CheerpJ this showed half-updated frames.
+                synchronized (screenLock) {
+                    if (screenImage != null) {
+                        g.drawImage(screenImage, 0, 0, null);
+                    }
                 }
             }
         };
@@ -95,11 +100,12 @@ public abstract class AbstractAWTBackend implements UIBackend {
         int w = canvasWidth;
         int h = canvasHeight;
 
-        if (screenImage == null) {
-            screenImage = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
+        synchronized (screenLock) {
+            if (screenImage == null) {
+                screenImage = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
+            }
+            screenImage.setRGB(0, 0, w, h, argbPixels, 0, w);
         }
-
-        screenImage.setRGB(0, 0, w, h, argbPixels, 0, w);
         panel.repaint();
     }
 

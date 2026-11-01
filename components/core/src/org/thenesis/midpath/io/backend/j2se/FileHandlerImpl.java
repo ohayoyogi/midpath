@@ -34,6 +34,7 @@ public class FileHandlerImpl extends AbstractFileHandler {
 	//private String rootName;
 	//private String absFile;
 	private RandomAccessFile randomAccessFile;
+	private boolean writable;
 
 	public FileHandlerImpl() {
 	}
@@ -182,13 +183,24 @@ public class FileHandlerImpl extends AbstractFileHandler {
 	public void openForRead() throws IOException {
 		if (randomAccessFile == null) {
 			//stream = new FileRandomAccessStream(file);
-			randomAccessFile = new RandomAccessFile(file, "rws");
+			// Read-only, so that files on read-only file systems can be read.
+			randomAccessFile = new RandomAccessFile(file, "r");
+			writable = false;
 		}
 	}
 
 	public void openForWrite() throws IOException {
+		if (randomAccessFile != null && !writable) {
+			// Opened read-only by openForRead(): reopen for writing.
+			long position = randomAccessFile.getFilePointer();
+			randomAccessFile.close();
+			randomAccessFile = new RandomAccessFile(file, "rws");
+			randomAccessFile.seek(position);
+			writable = true;
+		}
 		if (randomAccessFile == null) {
 			randomAccessFile = new RandomAccessFile(file, "rws");
+			writable = true;
 		}
 	}
 
