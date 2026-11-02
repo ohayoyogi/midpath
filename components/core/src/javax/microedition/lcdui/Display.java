@@ -1909,8 +1909,44 @@ public class Display {
 	 *          application code.
 	 */
 	static void handleThrowable(Throwable t) {
+		reportThrowable(t);
 		if (Logging.TRACE_ENABLED) {
 			Logging.trace(t, "Exception caught in Display class");
+		}
+	}
+
+	/** How often each exception class has been reported. */
+	private static final java.util.Hashtable throwableCounts = new java.util.Hashtable();
+
+	/**
+	 * Report an exception thrown by MIDlet code called from the UI (paint, key events, commands,
+	 * ...). These used to be swallowed silently, which hid bugs such as a paint() that aborts
+	 * halfway and leaves a partially drawn frame. The first exception of each class is printed
+	 * with its stack trace; repeats (e.g. once per frame, possibly with a different message) are
+	 * only counted and summarized at 10, 100, 1000, ... occurrences so the console is not flooded.
+	 */
+	private static void reportThrowable(Throwable t) {
+		String key = t.getClass().getName();
+		int count;
+		synchronized (throwableCounts) {
+			Integer previous = (Integer) throwableCounts.get(key);
+			if (previous == null && throwableCounts.size() >= 64) {
+				return; // Enough distinct classes reported; stay quiet.
+			}
+			count = (previous == null) ? 1 : previous.intValue() + 1;
+			throwableCounts.put(key, new Integer(count));
+		}
+		if (count == 1) {
+			System.err.println("[MIDPath] Uncaught exception in MIDlet callback: " + t);
+			t.printStackTrace();
+		} else {
+			int n = count;
+			while (n % 10 == 0) {
+				n /= 10;
+			}
+			if (n == 1) {
+				System.err.println("[MIDPath] " + key + " thrown " + count + " times in MIDlet callbacks (latest: " + t + ")");
+			}
 		}
 	}
 
