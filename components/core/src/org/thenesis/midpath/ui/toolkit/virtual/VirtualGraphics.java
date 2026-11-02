@@ -34,6 +34,22 @@ public class VirtualGraphics extends Graphics {
 	public static final int MAX_ELLIPSE_RADIUS = 16384;
 
 	Rectangle clipRectangle = new Rectangle();
+	private Rectangle inclusiveClipRectangle = new Rectangle();
+
+	/**
+	 * clipRectangle has exclusive xmax/ymax (x + width), but the line,
+	 * circle and arc routines treat them as the last drawable pixel. They wrote one row or
+	 * column past the clip, and past the end of the surface at the bottom edge, where the
+	 * ArrayIndexOutOfBoundsException silently aborted the rest of the MIDlet's paint().
+	 */
+	private Rectangle inclusiveClip() {
+		Rectangle c = clipRectangle, r = inclusiveClipRectangle;
+		r.xmin = c.xmin;
+		r.ymin = c.ymin;
+		r.xmax = c.xmax - 1;
+		r.ymax = c.ymax - 1;
+		return r;
+	}
 	private int internalColor;
 
 	VirtualGraphics(VirtualSurface surface) {
@@ -132,7 +148,7 @@ public class VirtualGraphics extends Graphics {
 	//--------------------------------------------------------------------------------
 	public void drawHLine(int x0, int x1, int y) {
 		// Clip.
-		Rectangle r = clipRectangle;
+		Rectangle r = inclusiveClip();
 		x0 += transX;
 		x1 += transX;
 		y += transY;
@@ -145,8 +161,8 @@ public class VirtualGraphics extends Graphics {
 			return;
 		if (x0 < r.xmin)
 			x0 = r.xmin;
-		if (x1 > r.xmax - 1)
-			x1 = r.xmax - 1;
+		if (x1 > r.xmax)
+			x1 = r.xmax;
 
 		// Draw.
 		drawSpan(surface.data, y * surface.width + x0, x1 - x0 + 1);
@@ -154,7 +170,7 @@ public class VirtualGraphics extends Graphics {
 
 	public void drawVLine(int y0, int y1, int x) {
 		// Clip.
-		Rectangle r = clipRectangle;
+		Rectangle r = inclusiveClip();
 		y0 += transY;
 		y1 += transY;
 		x += transX;
@@ -167,8 +183,8 @@ public class VirtualGraphics extends Graphics {
 			return;
 		if (y0 < r.ymin)
 			y0 = r.ymin;
-		if (y1 > r.ymax - 1)
-			y1 = r.ymax - 1;
+		if (y1 > r.ymax)
+			y1 = r.ymax;
 
 		// Draw.
 		int h = y1 - y0 + 1;
@@ -206,7 +222,7 @@ public class VirtualGraphics extends Graphics {
 		sl.y0 = y0 + transY;
 		sl.y1 = y1 + transY;
 
-		if (clipLine(clipRectangle, sl, dl))
+		if (clipLine(inclusiveClip(), sl, dl))
 			return;
 
 		// Draw.
@@ -492,7 +508,7 @@ public class VirtualGraphics extends Graphics {
 	// Circle.
 	//--------------------------------------------------------------------------------
 	private void drawQuadrantPoints(int x, int y, int xp, int yp) {
-		Rectangle r = clipRectangle;
+		Rectangle r = inclusiveClip();
 		int x0 = x - xp, x1 = x + xp, y0 = y - yp, y1 = y + yp;
 		boolean left = (x0 >= r.xmin) && (x0 <= r.xmax), right = (x1 >= r.xmin) && (x1 <= r.xmax) && (xp != 0);
 		if ((y0 >= r.ymin) && (y0 <= r.ymax)) {
@@ -510,7 +526,7 @@ public class VirtualGraphics extends Graphics {
 	}
 
 	private void drawQuadrantSpans(int x, int y, int xp, int yp) {
-		Rectangle r = clipRectangle;
+		Rectangle r = inclusiveClip();
 		int x0 = x - xp, x1 = x + xp, y0 = y - yp, y1 = y + yp;
 		if (x0 < r.xmin)
 			x0 = r.xmin;
@@ -532,7 +548,7 @@ public class VirtualGraphics extends Graphics {
 		x += transX;
 		y += transY;
 
-		Rectangle r = clipRectangle;
+		Rectangle r = inclusiveClip();
 		int xmin = x - radius, xmax = x + radius, ymin = y - radius, ymax = y + radius;
 		if ((xmin > r.xmax) || (xmax < r.xmin) || (ymin > r.ymax) || (ymax < r.ymin))
 			return;
@@ -561,7 +577,7 @@ public class VirtualGraphics extends Graphics {
 		x += transX;
 		y += transY;
 
-		Rectangle r = clipRectangle;
+		Rectangle r = inclusiveClip();
 		int xmin = x - radius, xmax = x + radius, ymin = y - radius, ymax = y + radius;
 		if ((xmin > r.xmax) || (xmax < r.xmin) || (ymin > r.ymax) || (ymax < r.ymin))
 			return;
@@ -741,7 +757,7 @@ public class VirtualGraphics extends Graphics {
 	// Cf: Graphics Programming Methods; 2.3 - A fast all-integer ellipse discretization algorithm; page 121.
 
 	private void drawArcPoints(int x, int y, int xp, int yp, int xs, int ys, int xe, int ye, boolean reflexAngle) {
-		Rectangle r = clipRectangle;
+		Rectangle r = inclusiveClip();
 		int x0 = x - xp, x1 = x + xp, y0 = y - yp, y1 = y + yp;
 		int xpys = xp * ys, ypxs = yp * xs, xpye = xp * ye, ypxe = yp * xe;
 		boolean left = (x0 >= r.xmin) && (x0 <= r.xmax), right = (x1 >= r.xmin) && (x1 <= r.xmax) && (xp != 0), insideFlag;
@@ -893,7 +909,7 @@ public class VirtualGraphics extends Graphics {
 	}
 
 	private void fillArcSpan(int x, int y, int xp, int yp, int xs, int ys, int xe, int ye) {
-		Rectangle r = clipRectangle;
+		Rectangle r = inclusiveClip();
 		int y0 = y - yp;
 		if ((y0 >= r.ymin) && (y0 <= r.ymax)) {
 			int xs0, xe0, xi0, xi1, x0, x1, w;
