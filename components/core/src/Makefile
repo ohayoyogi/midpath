@@ -133,6 +133,7 @@ PACKAGES = \
 	com.sun.midp.io.j2me.push \
 	org.thenesis.midpath.sound \
 	org.thenesis.midpath.sound.backend.pulseaudio \
+	org.thenesis.midpath.sound.backend.javasound \
 	com.sun.midp.main \
 	org.thenesis.midpath.ui.toolkit.sdl \
 	com.sun.midp.io.j2me.socket \
@@ -511,6 +512,7 @@ org.thenesis.midpath.sound.backend.esd : $(call PACKAGE_OBJS,org.thenesis.midpat
 com.sun.midp.io.j2me.push : $(call PACKAGE_OBJS,com.sun.midp.io.j2me.push)
 org.thenesis.midpath.sound : $(call PACKAGE_OBJS,org.thenesis.midpath.sound)
 org.thenesis.midpath.sound.backend.pulseaudio : $(call PACKAGE_OBJS,org.thenesis.midpath.sound.backend.pulseaudio)
+org.thenesis.midpath.sound.backend.javasound : $(call PACKAGE_OBJS,org.thenesis.midpath.sound.backend.javasound)
 com.sun.midp.main : $(call PACKAGE_OBJS,com.sun.midp.main)
 org.thenesis.midpath.ui.toolkit.sdl : $(call PACKAGE_OBJS,org.thenesis.midpath.ui.toolkit.sdl)
 com.sun.midp.io.j2me.socket : $(call PACKAGE_OBJS,com.sun.midp.io.j2me.socket)
