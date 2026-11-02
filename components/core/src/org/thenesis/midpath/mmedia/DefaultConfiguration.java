@@ -26,6 +26,10 @@
  */
 package org.thenesis.midpath.mmedia;
 
+import org.thenesis.midpath.sound.NullSoundBackend;
+import org.thenesis.midpath.sound.SoundBackend;
+import org.thenesis.midpath.sound.SoundToolkit;
+
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
@@ -540,6 +544,15 @@ public class DefaultConfiguration extends Configuration {
      * @return    The tonePlayer value
      */
     public TonePlayer getTonePlayer() {
+        synchronized (DefaultConfiguration.class) {
+            // Synthesize tones through the configured sound backend, if there is a real one.
+            if (myTonePlayer == null) {
+                SoundBackend backend = SoundToolkit.getBackend();
+                if (!(backend instanceof NullSoundBackend)) {
+                    myTonePlayer = new SynthTonePlayer(backend);
+                }
+            }
+        }
         return myTonePlayer;
     }
     

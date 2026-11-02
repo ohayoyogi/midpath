@@ -43,8 +43,20 @@ public class SoundToolkit {
 			soundBackend = new EsdBackend();
 		} else if (backendName.equalsIgnoreCase("PulseAudio")) {
 			soundBackend = new PulseBackend();
+		} else if (backendName.equalsIgnoreCase("JavaSound")) {
+			// Loaded by name: javax.sound.sampled only exists on Java SE runtimes.
+			soundBackend = createBackend("org.thenesis.midpath.sound.backend.javasound.JavaSoundBackend");
 		} else {
 			soundBackend = new NullSoundBackend();
+		}
+	}
+
+	private static SoundBackend createBackend(String className) {
+		try {
+			return (SoundBackend) Class.forName(className).newInstance();
+		} catch (Throwable t) {
+			System.err.println("[MIDPath] Sound backend " + className + " is not available: " + t);
+			return new NullSoundBackend();
 		}
 	}
 
