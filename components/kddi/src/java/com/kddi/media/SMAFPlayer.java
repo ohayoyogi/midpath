@@ -4,12 +4,17 @@ import org.ohayoyogi.media.BaseMediaPlayer;
 import org.ohayoyogi.media.StubMediaPlayer;
 
 public class SMAFPlayer extends MediaPlayer {
+    static final boolean stub = false;
     BaseMediaPlayer _player;
 
     protected SMAFPlayer(MediaResource resource, MediaPlayerBox box) {
         super(resource, box);
-        // SMAF is not synthesized: play silently so the MIDlet keeps running.
-        this._player = new StubMediaPlayer();
+        if (stub) {
+            this._player = new StubMediaPlayer();
+        } else {
+            System.out.println("SMAFPlayer#SMAFPlayer");
+            this._player = new org.ohayoyogi.media.SMAFPlayer();
+        }
     }
 
     // @Override

@@ -684,7 +684,7 @@ build_java $M3G_API_ENABLED components/jsr184-m3g/core $M3G_JAR \
 
 # Build KDDI / J-BLEND (the au EZappli APIs)
 build_java $KDDI_ENABLED components/kddi/src/java $KDDI_JAR \
-  :$MIDPATH_JAR
+  :$MIDPATH_JAR:$LIBRETRO_JAR
 
 #-------------------
 # Build demos

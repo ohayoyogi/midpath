@@ -26,6 +26,7 @@ import javax.microedition.media.MediaException;
 import javax.microedition.media.Player;
 
 import org.ohayoyogi.media.BaseMediaResource;
+import org.ohayoyogi.media.SMAFResource;
 import org.ohayoyogi.media.StubMediaResource;
 
 // import org.ohayoyogi.media.MMFConverter;
@@ -33,6 +34,8 @@ import org.ohayoyogi.media.StubMediaResource;
 // 13KQcelp (.qcp)
 // SMAF(.mmf)
 public class MediaResource {
+
+    private static final boolean stub = false;
 
     public static final String SMAF_YAMAHA_MA1 = "dev4anm";
     public static final String SMAF_YAMAHA_MA2 = "devmfan";
@@ -58,8 +61,11 @@ public class MediaResource {
             while ((len = stream.read(buff)) != -1) {
                 baos.write(buff, 0, len);
             }
-            // SMAF is not synthesized: keep a silent stub resource.
-            _resource = new StubMediaResource();
+            if (stub) {
+                _resource = new StubMediaResource();
+            } else {
+                _resource = new SMAFResource(baos.toByteArray());
+            }
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
@@ -79,8 +85,16 @@ public class MediaResource {
 
         this.player = null;
         this.type = disposition;
-        // SMAF is not synthesized: keep a silent stub resource.
-        this._resource = new StubMediaResource();
+        if (stub) {
+            this._resource = new StubMediaResource();
+        } else {
+            if (disposition.equals("dev4anm")
+                    || disposition.equals("devmfan")
+                    || disposition.equals("devm39z")
+                    || disposition.equals("devm53z")) {
+                this._resource = new SMAFResource(resource);
+            }
+        }
         System.out.println("MediaResource(byte, String) end");
     }
 
