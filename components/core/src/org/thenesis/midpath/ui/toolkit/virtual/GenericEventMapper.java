@@ -44,6 +44,18 @@ public class GenericEventMapper implements EventMapper {
 	private static int KEY_POWER;
 	private static int KEY_SOFT_BUTTON1;
 	private static int KEY_SOFT_BUTTON2;
+	private static int KEY_SOFT_BUTTON3;
+	private static int KEY_SOFT_BUTTON4;
+	private static int KEY_1;
+	private static int KEY_2;
+	private static int KEY_3;
+	private static int KEY_4;
+	private static int KEY_5;
+	private static int KEY_6;
+	private static int KEY_7;
+	private static int KEY_8;
+	private static int KEY_9;
+	private static int KEY_0;
 
 	static {
 		KEY_LEFT = Configuration.getIntProperty("org.thenesis.midpath.ui.keys.LEFT", KeyConstants.VK_LEFT);
@@ -62,6 +74,18 @@ public class GenericEventMapper implements EventMapper {
 		KEY_POWER = Configuration.getIntProperty("org.thenesis.midpath.ui.keys.POWER", KeyConstants.VK_F12);
 		KEY_SOFT_BUTTON1 = Configuration.getIntProperty("org.thenesis.midpath.ui.keys.SOFT_BUTTON1", KeyConstants.VK_F1);
 		KEY_SOFT_BUTTON2 = Configuration.getIntProperty("org.thenesis.midpath.ui.keys.SOFT_BUTTON2", KeyConstants.VK_F2);
+		KEY_SOFT_BUTTON3 = Configuration.getIntProperty("org.thenesis.midpath.ui.keys.SOFT_BUTTON2", KeyConstants.VK_F8);
+		KEY_SOFT_BUTTON4 = Configuration.getIntProperty("org.thenesis.midpath.ui.keys.SOFT_BUTTON2", KeyConstants.VK_F9);
+		KEY_1 = Configuration.getIntProperty("org.thenesis.midpath.ui.keys.KEY_1", KeyConstants.VK_1);
+		KEY_2 = Configuration.getIntProperty("org.thenesis.midpath.ui.keys.KEY_2", KeyConstants.VK_2);
+		KEY_3 = Configuration.getIntProperty("org.thenesis.midpath.ui.keys.KEY_3", KeyConstants.VK_3);
+		KEY_4 = Configuration.getIntProperty("org.thenesis.midpath.ui.keys.KEY_4", KeyConstants.VK_4);
+		KEY_5 = Configuration.getIntProperty("org.thenesis.midpath.ui.keys.KEY_5", KeyConstants.VK_5);
+		KEY_6 = Configuration.getIntProperty("org.thenesis.midpath.ui.keys.KEY_6", KeyConstants.VK_6);
+		KEY_7 = Configuration.getIntProperty("org.thenesis.midpath.ui.keys.KEY_7", KeyConstants.VK_7);
+		KEY_8 = Configuration.getIntProperty("org.thenesis.midpath.ui.keys.KEY_8", KeyConstants.VK_8);
+		KEY_9 = Configuration.getIntProperty("org.thenesis.midpath.ui.keys.KEY_9", KeyConstants.VK_9);
+		KEY_0 = Configuration.getIntProperty("org.thenesis.midpath.ui.keys.KEY_0", KeyConstants.VK_0);
 	}
 
 	public int getGameAction(int keyCode) {
@@ -84,6 +108,28 @@ public class GenericEventMapper implements EventMapper {
 			return Canvas.RIGHT;
 		else if (keyCode == Constants.KEYCODE_UP)
 			return Canvas.UP;
+		else if (keyCode == Canvas.KEY_NUM0)
+			return 0;
+		else if (keyCode == Canvas.KEY_NUM1)
+			return Canvas.GAME_A;
+		else if (keyCode == Canvas.KEY_NUM2)
+			return Canvas.UP;
+		else if (keyCode == Canvas.KEY_NUM3)
+			return Canvas.GAME_B;
+		else if (keyCode == Canvas.KEY_NUM4)
+			return Canvas.LEFT;
+		else if (keyCode == Canvas.KEY_NUM5)
+			return Canvas.FIRE;
+		else if (keyCode == Canvas.KEY_NUM6)
+			return Canvas.RIGHT;
+		else if (keyCode == Canvas.KEY_NUM8)
+			return Canvas.DOWN;
+		else if (keyCode == Canvas.KEY_NUM9)
+			return Canvas.GAME_D;
+		else if (keyCode == Canvas.KEY_STAR)
+			return 0;
+		else if (keyCode == Canvas.KEY_POUND)
+			return 0;
 		else
 			return -1;
 	}
@@ -174,6 +220,26 @@ public class GenericEventMapper implements EventMapper {
 			return Constants.KEYCODE_END;
 		else if (keyCode == KEY_POWER)
 			return Constants.KEYCODE_POWER;
+		else if (keyCode == KEY_0)
+			return Canvas.KEY_NUM0;
+		else if (keyCode == KEY_1)
+			return Canvas.KEY_NUM1;
+		else if (keyCode == KEY_2)
+			return Canvas.KEY_NUM2;
+		else if (keyCode == KEY_3)
+			return Canvas.KEY_NUM3;
+		else if (keyCode == KEY_4)
+			return Canvas.KEY_NUM4;
+		else if (keyCode == KEY_5)
+			return Canvas.KEY_NUM5;
+		else if (keyCode == KEY_6)
+			return Canvas.KEY_NUM6;
+		else if (keyCode == KEY_7)
+			return Canvas.KEY_NUM7;
+		else if (keyCode == KEY_8)
+			return Canvas.KEY_NUM8;
+		else if (keyCode == KEY_9)
+			return Canvas.KEY_NUM9;
 
 		// Return the visible character
 		if (c != KeyConstants.CHAR_UNDEFINED) {

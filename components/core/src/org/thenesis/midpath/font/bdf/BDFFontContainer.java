@@ -220,16 +220,18 @@ public class BDFFontContainer {
         return version;
     }
     
-  String lookup(String s) {
-	  String result = (String)charMapper.get(".undef");
-	  if(s.length()==1) {
-		  result = ""+(s.charAt(0));
-	  } else if(charMapper.get(s) != null) {
-		  result = (String)charMapper.get(s);
-  }
+    String lookup(String s) {
+        String result = (String)charMapper.get(".undef");
+        if(s.length()==1) {
+            result = ""+(s.charAt(0));
+	    } else if (s.startsWith("U+")) {
+            result = "" + (char)Integer.parseInt(s.substring(2), 16);
+        } else if(charMapper.get(s) != null) {
+            result = (String)charMapper.get(s);
+        }
 
-  return result;
-}
+        return result;
+    }
 
 //    String lookup(String s) {
 //        String result = charMapper.getString(".undef");

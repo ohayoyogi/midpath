@@ -24,7 +24,7 @@ import com.sun.midp.midletsuite.MIDletInfo;
 
 public class MIDletLauncher {
 	
-	static JarInspectorME jarInspector;
+	static AbstractJarInspector jarInspector;
 
 	public static void main(String[] args) {
 
@@ -54,7 +54,11 @@ public class MIDletLauncher {
 
 		if (args.length == 2) {
 			if (args[0].equals("-jar")) {
-				jarInspector = new JarInspectorME(args[1]);
+				if (args[1].endsWith(".kjx")) {
+					jarInspector = new KjxInspectorME(args[1]);
+				} else {
+					jarInspector = new JarInspectorME(args[1]);
+				}
 				MIDletInfo[] infos = jarInspector.getMIDletInfo();
 				if (infos.length == 0) {
 					throw new Exception("No MIDlet was found in the jar (corrupted /META-INF/MANIFEST file ?)");

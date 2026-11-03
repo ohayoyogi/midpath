@@ -106,6 +106,9 @@ public class EventQueue implements Runnable {
 	/** This is for the native finalizer to reset peer native queue. */
 	int nativeEventQueueHandle = -1;
 
+	/** Immediately execute repaint event */
+	boolean immediateRepaint = false;
+
 	/**
 	 * Returns true if the current thread is the event queue dispatch thread.
 	 * 
@@ -160,6 +163,8 @@ public class EventQueue implements Runnable {
 		eventQueueThread = new Thread(this);
 
 		//eventMonitorThread = new Thread(new NativeEventMonitor(eventQueueThread, this, pool));
+
+		immediateRepaint = Configuration.getPropertyDefault("com.sun.midp.events.immediateRepaint", "false").equals("true");
 	}
 
 	/** Starts the event queue and event monitor threads. */
@@ -329,6 +334,13 @@ public class EventQueue implements Runnable {
 				if (!dispatchData.listener.preprocess(event, dispatchData.waitingEvent)) {
 					/* The listener does not want this event posted. */
 					return;
+				}
+
+				if (immediateRepaint) {
+					if (event.type == EventTypes.REPAINT_EVENT || event.type == EventTypes.SCREEN_CHANGE_EVENT) {
+						dispatchData.listener.process(event);
+						return;
+					}		
 				}
 
 				dispatchData.waitingEvent = event;
