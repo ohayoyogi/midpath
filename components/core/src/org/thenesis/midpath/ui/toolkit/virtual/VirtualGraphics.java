@@ -128,15 +128,35 @@ public class VirtualGraphics extends Graphics {
 	//--------------------------------------------------------------------------------
 	// Span.
 	//--------------------------------------------------------------------------------	
+	/*
+	 * Seed a short run, then double it with System.arraycopy.
+	 *
+	 * The straightforward per-pixel loop is fine with a JIT and slow on an interpreter,
+	 * where each store is one interpreted iteration. System.arraycopy is native, so
+	 * doubling turns O(w) interpreted stores into O(log w) block copies.
+	 */
 	private void drawSpan(int dst[], int dstPosition, int w) {
-
-		//if (Logging.TRACE_ENABLED)
-		//	System.out.println("[DEBUG]VirtualGraphics.drawSpan : surface data size= " + surface.data.length + " dstPosition=" + dstPosition + " w=" + w);
 
 		switch (blendMode) {
 		case REPLACE:
-			for (int x = dstPosition; x < (dstPosition + w); x++) {
-				dst[x] = internalColor;
+			if (w < 16) {
+				for (int x = dstPosition; x < (dstPosition + w); x++) {
+					dst[x] = internalColor;
+				}
+			} else {
+				int seed = 8;
+				for (int x = dstPosition; x < dstPosition + seed; x++) {
+					dst[x] = internalColor;
+				}
+				int filled = seed;
+				while (filled < w) {
+					int n = filled;
+					if (filled + n > w) {
+						n = w - filled;
+					}
+					System.arraycopy(dst, dstPosition, dst, dstPosition + filled, n);
+					filled += n;
+				}
 			}
 			break;
 		}
@@ -499,8 +519,19 @@ public class VirtualGraphics extends Graphics {
 		if ((w <= 0) || (h <= 0))
 			return;
 
-		for (int ry = 0; ry < h; ry++) {
-			drawSpan(surface.data, (y0 + ry) * surface.width + x0, w);
+		/* Fill one row, then copy that row down. Same reasoning as drawSpan --
+		 * only valid for REPLACE, where every row is identical. */
+		if (blendMode == REPLACE && h > 1) {
+			int srcPos = y0 * surface.width + x0;
+			drawSpan(surface.data, srcPos, w);
+			for (int ry = 1; ry < h; ry++) {
+				System.arraycopy(surface.data, srcPos, surface.data,
+						(y0 + ry) * surface.width + x0, w);
+			}
+		} else {
+			for (int ry = 0; ry < h; ry++) {
+				drawSpan(surface.data, (y0 + ry) * surface.width + x0, w);
+			}
 		}
 	}
 
