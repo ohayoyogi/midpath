@@ -28,6 +28,7 @@ import java.awt.event.MouseMotionListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.awt.image.BufferedImage;
+import java.awt.image.DataBufferInt;
 import java.io.IOException;
 
 import org.thenesis.microbackend.ui.BackendEventListener;
@@ -38,6 +39,8 @@ public abstract class AbstractAWTBackend implements UIBackend {
 
     Panel panel;
     protected BufferedImage screenImage;
+    protected final Object screenLock = new Object();
+    private int[] screenPixels;
 
     int canvasWidth;
     int canvasHeight;
@@ -63,8 +66,12 @@ public abstract class AbstractAWTBackend implements UIBackend {
             }
 
             public void paint(Graphics g) {
-                if (screenImage != null) {
-                    g.drawImage(screenImage, 0, 0, null);
+                // Do not draw while updateARGBPixels() is rewriting the image: on
+                // runtimes such as CheerpJ this showed half-updated frames.
+                synchronized (screenLock) {
+                    if (screenImage != null) {
+                        g.drawImage(screenImage, 0, 0, null);
+                    }
                 }
             }
         };
@@ -95,11 +102,16 @@ public abstract class AbstractAWTBackend implements UIBackend {
         int w = canvasWidth;
         int h = canvasHeight;
 
-        if (screenImage == null) {
-            screenImage = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
+        synchronized (screenLock) {
+            if (screenImage == null) {
+                screenImage = new BufferedImage(w, h, BufferedImage.TYPE_INT_RGB);
+                screenPixels = ((DataBufferInt) screenImage.getRaster().getDataBuffer()).getData();
+            }
+            // Copy the whole frame at once into the image's own pixel array. setRGB() is not
+            // enough on CheerpJ: the pixels seen at paint time could already belong to the
+            // next, half-painted frame, which showed up as full-width background bands.
+            System.arraycopy(argbPixels, 0, screenPixels, 0, w * h);
         }
-
-        screenImage.setRGB(0, 0, w, h, argbPixels, 0, w);
         panel.repaint();
     }
 
