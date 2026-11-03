@@ -27,6 +27,7 @@ import org.thenesis.microbackend.ui.Configuration;
 public class AWTBackend extends AbstractAWTBackend {
 
     private Frame frame;
+    private boolean undecorated;
 
     public AWTBackend(int w, int h) {
         canvasWidth = w;
@@ -41,6 +42,8 @@ public class AWTBackend extends AbstractAWTBackend {
     public void configure(Configuration conf, int width, int height) {
         canvasWidth = width;
         canvasHeight = height;
+        // Show only the screen, without window decorations (e.g. when embedded in a web page).
+        undecorated = "true".equalsIgnoreCase(conf.getParameterDefault("org.thenesis.microbackend.ui.awt.undecorated", "false"));
     }
 
     public void setBackendEventListener(BackendEventListener listener) {
@@ -52,6 +55,10 @@ public class AWTBackend extends AbstractAWTBackend {
         
         frame = new Frame();
         frame.setResizable(false);
+        if (undecorated) {
+            frame.setUndecorated(true);
+            frame.setLocation(0, 0);
+        }
         frame.addWindowListener(converter);
         frame.add(panel);
         frame.pack();
