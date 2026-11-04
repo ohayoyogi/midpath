@@ -315,6 +315,11 @@ public class VirtualImage extends Image {
 
 		int w = sxmax - sxmin + 1, h = symax - symin + 1;
 
+		// Entirely clipped away: nothing to copy. The per-pixel loop below skipped such
+		// a call by itself, but the row copy would get a negative length and throw.
+		if (w <= 0 || h <= 0)
+			return true;
+
 		/*
 		 * Copy whole rows when the image has no transparent pixel.
 		 *
