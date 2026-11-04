@@ -21,12 +21,18 @@ import java.io.IOException;
 
 import org.eclipse.swt.widgets.Canvas;
 import org.thenesis.microbackend.ui.Configuration;
+import org.thenesis.microbackend.ui.WrapperBackend;
 
-public class SWTWrapperBackend extends AbstractSWTBackend {
+public class SWTWrapperBackend extends AbstractSWTBackend implements WrapperBackend {
 
     private Canvas canvas;
     
     public SWTWrapperBackend(Object m) {
+        setTarget(m);
+    }
+
+    /* WrapperBackend interface: see AWTWrapperBackend. */
+    public void setTarget(Object m) {
         canvas = (Canvas)m;
         display = canvas.getDisplay();
         canvasWidth = canvas.getSize().x;

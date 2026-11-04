@@ -24,7 +24,7 @@ import com.sun.midp.midletsuite.MIDletInfo;
 
 public class MIDletLauncher {
 	
-	static JarInspectorME jarInspector;
+	static AbstractJarInspector jarInspector;
 
 	public static void main(String[] args) {
 
@@ -54,7 +54,12 @@ public class MIDletLauncher {
 
 		if (args.length == 2) {
 			if (args[0].equals("-jar")) {
-				jarInspector = new JarInspectorME(args[1]);
+				if (args[1].endsWith(".kjx")) {
+					jarInspector = new KjxInspectorME(args[1]);
+				} else {
+					jarInspector = new JarInspectorME(args[1]);
+				}
+				installSuiteClassLoader(args[1]);
 				MIDletInfo[] infos = jarInspector.getMIDletInfo();
 				if (infos.length == 0) {
 					throw new Exception("No MIDlet was found in the jar (corrupted /META-INF/MANIFEST file ?)");
@@ -94,6 +99,21 @@ public class MIDletLauncher {
 
 		// Clean all and stop the VM
 		BaseMIDletSuiteLauncher.close();
+	}
+
+	/**
+	 * Load the suite's classes and resources from its file where the VM can (Java SE).
+	 * Otherwise the classes come from the classpath, as before.
+	 */
+	private void installSuiteClassLoader(String path) {
+		try {
+			SuiteClassLoader loader = (SuiteClassLoader) Class.forName(SuiteClassLoader.IMPLEMENTATION).newInstance();
+			loader.open(path);
+			BaseMIDletSuiteLauncher.setMIDletClassLoader(loader);
+		} catch (Throwable t) {
+			// No java.lang.ClassLoader (CLDC VM) or unreadable file: keep the default loader.
+			System.err.println("[MIDPath] Loading the suite from the classpath: " + t);
+		}
 	}
 
 	public void launchAndClose(String className, String midletName) throws Exception {

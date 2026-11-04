@@ -183,7 +183,12 @@ public class SkinResources {
         boolean isLoaded = false;
         
         // If we're set not to bother loading images, just return null
-        if (!Constants.CHAM_USE_IMAGES) {
+        //
+        // Honour the runtime property too, not only the compile-time constant.
+        // com.sun.midp.chameleon.skins.imageEnabled guarded some call sites but not this
+        // one, so setting it to "no" still decoded every skin PNG: 272ms of a 733ms
+        // desktop boot went into loading images that were then never drawn.
+        if (!Constants.CHAM_USE_IMAGES || !skinImageEnabled) {
             return null;
         }
 

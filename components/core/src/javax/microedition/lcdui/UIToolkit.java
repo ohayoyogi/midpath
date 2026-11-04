@@ -24,7 +24,6 @@ package javax.microedition.lcdui;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.thenesis.midpath.ui.toolkit.sdl.SDLToolkit;
 import org.thenesis.midpath.ui.toolkit.virtual.VirtualToolkit;
 
 import com.sun.midp.events.EventMapper;
@@ -36,11 +35,20 @@ public abstract class UIToolkit {
 	//private static Toolkit toolkit = new SDLToolkit();
 	//private static Toolkit toolkit = new VirtualToolkit();
 	private static UIToolkit toolkit;
+
+	private static final String SDL_TOOLKIT_CLASS = "org.thenesis.midpath.ui.toolkit.sdl.SDLToolkit";
 	
 	static {
 		String toolkitName = Configuration.getPropertyDefault("javax.microedition.lcdui.toolkit", "virtual");
 		if (toolkitName.equalsIgnoreCase("SDL")) {
-			toolkit = new SDLToolkit();
+			/* Reflection, not "new SDLToolkit()", on purpose: a VM that resolves the whole
+			 * constant pool when a class is initialised would otherwise load SDLToolkit
+			 * even where SDL can never be selected. */
+			try {
+				toolkit = (UIToolkit) Class.forName(SDL_TOOLKIT_CLASS).newInstance();
+			} catch (Exception e) {
+				throw new RuntimeException("cannot create " + SDL_TOOLKIT_CLASS + ": " + e);
+			}
 		} else {
 			toolkit = new VirtualToolkit();
 		}

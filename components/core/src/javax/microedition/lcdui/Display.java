@@ -2036,8 +2036,9 @@ public class Display {
 	 * @param y2 lower right corner y-coordinat
 	 */
 	private void refresh0(int displayId, int x1, int y1, int x2, int y2) {
-		
-		UIToolkit.getToolkit().refresh(displayId, x1, y1, x2- x1, y2 - y1);
+		synchronized(LCDUILock) {
+			UIToolkit.getToolkit().refresh(displayId, x1, y1, x2- x1, y2 - y1);
+		}
 		// TODO
 		//System.out.println("[DEBUG] Display.refresh0(): not implemented yet : x1=" + x1 + " y1=" + y1 + " x2=" + x2 + " y2= "+ y2);
 	}

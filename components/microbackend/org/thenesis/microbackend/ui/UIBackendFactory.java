@@ -17,17 +17,6 @@
  */
 package org.thenesis.microbackend.ui;
 
-import org.thenesis.microbackend.ui.awt.AWTBackend;
-import org.thenesis.microbackend.ui.awt.AWTWrapperBackend;
-import org.thenesis.microbackend.ui.awtgrabber.AWTGrabberBackend;
-import org.thenesis.microbackend.ui.fb.FBBackend;
-import org.thenesis.microbackend.ui.gtk.GTKBackend;
-import org.thenesis.microbackend.ui.libretro.LibRetroBackend;
-import org.thenesis.microbackend.ui.qt.QTBackend;
-import org.thenesis.microbackend.ui.sdl.SDLBackend;
-import org.thenesis.microbackend.ui.swt.SWTBackend;
-import org.thenesis.microbackend.ui.swt.SWTWrapperBackend;
-import org.thenesis.microbackend.ui.x11.X11Backend;
 
 public class UIBackendFactory {
 
@@ -44,34 +33,42 @@ public class UIBackendFactory {
     public static final String BACKEND_LIBRETRO = "LIBRETRO";
     public static final String BACKEND_NULL = "NULL";
 
+    /**
+     * Backends are resolved by name instead of being referenced directly.
+     *
+     * Naming them in code made the VM resolve -- and therefore load -- every backend
+     * class the moment this method was first executed, together with whatever each one
+     * drags in. On a constrained target that is a large part of startup, and the
+     * backends whose libraries are not shipped (SWT, AWT) cost the most, because a
+     * failed class lookup scans every classpath entry and finds nothing. The SDL, X11,
+     * SWT and AWT backends were all loaded even when the configuration selected none
+     * of them.
+     */
+    private static final String[][] BACKEND_CLASSES = {
+        { BACKEND_SDL,        "org.thenesis.microbackend.ui.sdl.SDLBackend" },
+        { BACKEND_AWT,        "org.thenesis.microbackend.ui.awt.AWTBackend" },
+        { BACKEND_AWTGRABBER, "org.thenesis.microbackend.ui.awtgrabber.AWTGrabberBackend" },
+        { BACKEND_SWT,        "org.thenesis.microbackend.ui.swt.SWTBackend" },
+        { BACKEND_X11,        "org.thenesis.microbackend.ui.x11.X11Backend" },
+        { BACKEND_GTK,        "org.thenesis.microbackend.ui.gtk.GTKBackend" },
+        { BACKEND_QT,         "org.thenesis.microbackend.ui.qt.QTBackend" },
+        { BACKEND_FB,         "org.thenesis.microbackend.ui.fb.FBBackend" },
+        { BACKEND_LIBRETRO,   "org.thenesis.microbackend.ui.libretro.LibRetroBackend" },
+    };
+
     public static UIBackend createBackend(String name) {
 
-        UIBackend backend = null;
-
-        if (name.equalsIgnoreCase(BACKEND_SDL)) {
-            backend = new SDLBackend();
-        } else if (name.equalsIgnoreCase(BACKEND_AWT)) {
-            backend = new AWTBackend();
-        } else if (name.equalsIgnoreCase(BACKEND_AWTGRABBER)) {
-            backend = new AWTGrabberBackend();
-        } else if (name.equalsIgnoreCase(BACKEND_SWT)) {
-            backend = new SWTBackend();
-        } else if (name.equalsIgnoreCase(BACKEND_X11)) {
-            backend = new X11Backend();
-        } else if (name.equalsIgnoreCase(BACKEND_GTK)) {
-            backend = new GTKBackend();
-        } else if (name.equalsIgnoreCase(BACKEND_QT)) {
-            backend = new QTBackend();
-        } else if (name.equalsIgnoreCase(BACKEND_FB)) {
-            backend = new FBBackend();
-        } else if (name.equalsIgnoreCase(BACKEND_LIBRETRO)) {
-            backend = new LibRetroBackend();
-        } else {
-            return null;
+        for (int i = 0; i < BACKEND_CLASSES.length; i++) {
+            if (name.equalsIgnoreCase(BACKEND_CLASSES[i][0])) {
+                try {
+                    return (UIBackend) Class.forName(BACKEND_CLASSES[i][1]).newInstance();
+                } catch (Throwable t) {
+                    Logging.log("Backend " + name + " is not available: " + t, Logging.WARNING);
+                    return null;
+                }
+            }
         }
-
-        return backend;
-
+        return null;
     }
 
     public static UIBackend createBackend(Object m) {
@@ -84,27 +81,54 @@ public class UIBackendFactory {
             return (UIBackend) m;
         }
 
-        Class containerClass = null;
-        try {
-            containerClass = Class.forName("java.awt.Container");
-            if (containerClass.isAssignableFrom(m.getClass())) {
-                return new AWTWrapperBackend(m);
-            }
-        } catch (ClassNotFoundException e) {
-            //e.printStackTrace();
+        /* Both wrappers are reached through reflection for the same reason the table
+         * above uses it: a VM that resolves a class's whole constant pool when the class
+         * is initialised would load the AWT/SWT wrapper classes for a direct
+         * "new AWTWrapperBackend(m)", even on devices that have neither. The guard classes are looked up first, so
+         * on such a device nothing beyond the failed lookup happens. */
+        UIBackend wrapped = wrap(m, "java.awt.Container", AWT_WRAPPER_CLASS);
+        if (wrapped != null) {
+            return wrapped;
         }
-        
-        try {
-            containerClass = Class.forName("org.eclipse.swt.widgets.Canvas");
-            if (containerClass.isAssignableFrom(m.getClass())) {
-                return new SWTWrapperBackend(m);
-            }
-        } catch (ClassNotFoundException e) {
-            //e.printStackTrace();
+        wrapped = wrap(m, "org.eclipse.swt.widgets.Canvas", SWT_WRAPPER_CLASS);
+        if (wrapped != null) {
+            return wrapped;
         }
 
         return null;
 
+    }
+
+    private static final String AWT_WRAPPER_CLASS = "org.thenesis.microbackend.ui.awt.AWTWrapperBackend";
+    private static final String SWT_WRAPPER_CLASS = "org.thenesis.microbackend.ui.swt.SWTWrapperBackend";
+
+    /**
+     * Wrap m if it is an instance of guardClassName, by reflectively constructing
+     * wrapperClassName. Returns null when the toolkit is absent or m is not one of its
+     * containers -- the same outcome the direct code had, without loading the wrapper.
+     */
+    private static UIBackend wrap(Object m, String guardClassName, String wrapperClassName) {
+        Class guardClass;
+        try {
+            guardClass = Class.forName(guardClassName);
+        } catch (ClassNotFoundException e) {
+            return null;
+        }
+        if (!guardClass.isAssignableFrom(m.getClass())) {
+            return null;
+        }
+        try {
+            /* Only a no-argument constructor is reachable through CLDC reflection, so the
+             * widget is handed over afterwards through WrapperBackend.setTarget(). */
+            WrapperBackend backend = (WrapperBackend) Class.forName(wrapperClassName)
+                    .newInstance();
+            backend.setTarget(m);
+            return backend;
+        } catch (Exception e) {
+            Logging.log("UIBackendFactory: cannot create " + wrapperClassName + ": " + e,
+                    Logging.WARNING);
+            return null;
+        }
     }
     
 //    private static void setNativeLibraryLoader(String jvmType) {

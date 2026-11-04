@@ -33,7 +33,10 @@ public class RecordStoreFile implements AbstractRecordStoreFile {
 		//stream =  toolkit.getBaseFileHandler().getRandomAccessStream();
 		fileHandler = toolkit.createBaseFileHandler();
 		fileHandler.connect(RMS_ROOT_PATH, buildRecordStoreName(suiteID, name, idx_extension));
-		fileHandler.openForRead();
+		/* A record store is read and written through one handle, and on first use the
+		 * file does not exist yet. openForWrite() opens "rws", which creates the file
+		 * and still allows reading. openForRead() opens "r", which cannot create it,
+		 * so calling it first failed before any record store could be made. */
 		fileHandler.openForWrite();
 		stream = fileHandler.getRandomAccessStream();
 		//		} catch (IOException e) {
