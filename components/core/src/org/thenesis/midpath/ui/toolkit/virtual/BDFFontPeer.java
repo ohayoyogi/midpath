@@ -201,65 +201,44 @@ public class BDFFontPeer implements FontPeer {
 				int[] fData = glyph.getData();
 				int scan = fData.length / fHeight;
 
-				// FIXME Improve clipping
 				int currentX = x + offset;
-				if (currentX > r.xmax || (currentX + scan) > r.xmax || y < r.ymin || y > r.ymax
-						|| (y + fHeight) > r.ymax)
-					break;
+				// Top row of this glyph on the surface.
+				int glyphTop = y + (container.getBoundingBox().height + base - fHeight) - glyph.getBbx().y;
+				int depth = container.getDepth();
+				// Highest pixel value at this depth: a pixel at that value is drawn in the full
+				// colour. (Shifting by the depth instead drew 1-bit fonts at half brightness.)
+				int maxValue = (1 << depth) - 1;
 
-				if (container.getDepth() == 8) {
-					for (int k = 0; k < fHeight; k++) {
-						for (int j = 0; j < scan; j++) {
-							int fPixel = fData[(k * scan) + j];
-							if (fPixel != 0) {
+				for (int k = 0; k < fHeight; k++) {
+					int dy = glyphTop + k;
+					// Clip per pixel: a glyph that is only partly visible is still drawn, and the
+					// rest of the string goes on (it used to stop at the first such glyph).
+					if (dy < r.ymin || dy >= r.ymax)
+						continue;
+					for (int j = 0; j < scan; j++) {
+						int fPixel = fData[(k * scan) + j];
+						if (fPixel == 0)
+							continue;
+						int dx = currentX + j;
+						if (dx < r.xmin || dx >= r.xmax)
+							continue;
+						int destPosition = dy * surface.getWidth() + dx;
 
-								int destPosition = (y + (container.getBoundingBox().height + base - fHeight) + k - glyph
-										.getBbx().y)
-										* surface.getWidth() + (x + offset + j);
-
-								// Source.
-								int sr = (color & 0x00FF0000) >> 16;
-								int sg = (color & 0x0000FF00) >> 8;
-								int sb = color & 0x000000FF;
-
-								// Destination.
-								int dr = (surface.data[destPosition] & 0x00FF0000) >> 16;
-								int dg = (surface.data[destPosition] & 0x0000FF00) >> 8;
-								int db = surface.data[destPosition] & 0x000000FF;
-
-								// Alpha blending
-								int a = fPixel;
-								int factor = 0x00010000 / 255;
-								dr = ((a * sr + (0xff - a) * dr) * factor) >> 16;
-								dg = ((a * sg + (0xff - a) * dg) * factor) >> 16;
-								db = ((a * sb + (0xff - a) * db) * factor) >> 16;
-
-								surface.data[destPosition] = (((dr << 16) + (dg << 8) + db) | 0xFF000000);
-							}
+						int sr = (color & 0x00FF0000) >> 16;
+						int sg = (color & 0x0000FF00) >> 8;
+						int sb = color & 0x000000FF;
+						if (fPixel >= maxValue) {
+							surface.data[destPosition] = color | 0xFF000000;
+							continue;
 						}
-					}
-				} else {
-
-					for (int k = 0; k < fHeight; k++) {
-						for (int j = 0; j < scan; j++) {
-							int fPixel = fData[(k * scan) + j];
-							if (fPixel != 0) {
-
-								int destPosition = (y + (container.getBoundingBox().height + base - fHeight) + k - glyph
-										.getBbx().y)
-										* surface.getWidth() + (x + offset + j);
-
-								int red = (color & 0x00FF0000) >> 16;
-								int green = (color & 0x0000FF00) >> 8;
-								int blue = (color & 0x000000FF);
-
-								red = ((red * fPixel) >> container.getDepth()) & 0xFF;
-								green = ((green * fPixel) >> container.getDepth()) & 0xFF;
-								blue = ((blue * fPixel) >> container.getDepth()) & 0xFF;
-
-								surface.data[destPosition] = (((red << 16) + (green << 8) + blue) | 0xFF000000);
-							}
-						}
+						// Partially covered pixel (anti-aliased fonts): blend with the background.
+						int dr = (surface.data[destPosition] & 0x00FF0000) >> 16;
+						int dg = (surface.data[destPosition] & 0x0000FF00) >> 8;
+						int db = surface.data[destPosition] & 0x000000FF;
+						dr = (fPixel * sr + (maxValue - fPixel) * dr) / maxValue;
+						dg = (fPixel * sg + (maxValue - fPixel) * dg) / maxValue;
+						db = (fPixel * sb + (maxValue - fPixel) * db) / maxValue;
+						surface.data[destPosition] = (((dr << 16) + (dg << 8) + db) | 0xFF000000);
 					}
 				}
 
