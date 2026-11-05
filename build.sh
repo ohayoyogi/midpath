@@ -30,6 +30,7 @@ JORBIS_CLDC_ENABLED=yes
 AVETANABT_CLDC_ENABLED=yes
 JGL_CLDC_ENABLED=yes
 KDDI_ENABLED=yes
+FONTS_JA_ENABLED=yes
 
 # Optional components
 WEB_SERVICES_API_ENABLED=yes
@@ -63,6 +64,7 @@ SVG_AWT_JAR=$JAR_DIST_HOME/jsr226-svg-awt.jar
 
 JGL_CLDC_JAR=$JAR_DIST_HOME/jgl-cldc.jar
 KDDI_JAR=$JAR_DIST_HOME/kddi.jar
+FONTS_JA_JAR=$JAR_DIST_HOME/fonts-ja.jar
 OPENGLES_CORE_JAR=$JAR_DIST_HOME/jsr239-opengles-core.jar
 OPENGLES_JGL_JAR=$JAR_DIST_HOME/jsr239-opengles-jgl.jar
 OPENGLES_NIO_JAR=$JAR_DIST_HOME/jsr239-opengles-nio.jar
@@ -124,6 +126,7 @@ enable-svg-api-awt,\
 disable-opengl-api,\
 disable-m3g-api,\
 disable-demos,\
+disable-fonts-ja,\
 \
 with-j2se-jar:,\
 with-cldc-jar:,\
@@ -202,6 +205,7 @@ while true; do
       echo "  --disable-opengl-api      : Do not compile the OpenGL ES API (JSR239) (default: yes)"
       echo "  --disable-m3g-api         : Do not compile the Mobile 3D Graphics API (JSR184) (default: yes)"
       echo "  --disable-demos           : Do not compile the MIDPath demos (default: yes)"
+      echo "  --disable-fonts-ja        : Do not package the Japanese font (fonts-ja.jar) (default: yes)"
       echo
       echo "Providable libraries:"
       echo "  --with-cldc-jar           : Location of the CLDC class library"
@@ -330,6 +334,9 @@ while true; do
       shift ;;
     --disable-demos ) DEMOS_ENABLED=no
       echo "compiling MIDPath demos disabled"
+      shift ;;
+    --disable-fonts-ja ) FONTS_JA_ENABLED=no
+      echo "packaging the Japanese font disabled"
       shift ;;
     --with-j2se-jar )
       J2SE_JAR=$2
@@ -685,6 +692,11 @@ build_java $M3G_API_ENABLED components/jsr184-m3g/core $M3G_JAR \
 # Build KDDI / J-BLEND (the au EZappli APIs)
 build_java $KDDI_ENABLED components/kddi/src/java $KDDI_JAR \
   :$MIDPATH_JAR
+
+# Package the Japanese font for the BDF font renderer (resource /fonts/shinonome12-unicode.bdf)
+if [ $FONTS_JA_ENABLED = yes ]; then
+  $JAR_CMD cf $FONTS_JA_JAR -C components/fonts-ja/resources fonts || exit 1
+fi
 
 #-------------------
 # Build demos
